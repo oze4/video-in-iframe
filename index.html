@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Testing video in iframe</title>
+</head>
+
+<body style="height: 100vh;">
+  <h1>Testing Page Visibility API in an iframe</h1>
+
+  <script>
+    // ====================================================================================================================
+    // ~~~ FIRST SCRIPT ~~~
+    // PROGRAMMATICALLY CREATES IFRAME WITH OUR VIDEO 
+    // - this is what HP5 appears to be doing...
+    // ====================================================================================================================
+
+    // create placeholder text
+    document.body.innerHTML += '<h3 id="placeholder">iframe will load in 5 seconds...</h3>'
+
+    // setTimeout simulates loading (this is what I believe is happening)
+    setTimeout(() => {
+      // remove placeholder element
+      let pholder = document.getElementById('placeholder');
+      pholder.remove();
+
+      // Programmatically create iframe, which is what HP5 appears to be doing..
+      let iframeEl = document.createElement('iframe');
+      iframeEl.setAttribute('id', 'my-iframe-id');
+      iframeEl.setAttribute('style', 'height: 100%; width: 100%;');
+
+      // Programmatically create the video element, which is what HP5 appears to
+      // be doing.
+      let videoEl = document.createElement('video');
+      videoEl.id = "my-video-id";
+      videoEl.src =
+        "https://player.vimeo.com/external/376040732.sd.mp4?s=a88abddb83ad31962643b6c4dd8270323d80874e&amp;profile_id=165";
+      videoEl['webkit-playsinline'] = "";
+      videoEl['playsinline'] = "";
+      videoEl.preload = "metadata";
+      videoEl.setAttribute('controls', true);
+
+      // Add programmatically created nodes to DOM.
+      document.body.appendChild(iframeEl);
+      iframeEl.contentWindow.document.open();
+      iframeEl.contentWindow.document.write('<h1>hello from iframe</h1>');
+      iframeEl.contentWindow.document.close();
+      iframeEl.contentDocument.body.appendChild(videoEl);
+    }, 5000);
+
+    // ====================================================================================================================
+    // ---------- END FIRST SCRIPT ------------
+    // ====================================================================================================================
+  </script>
+
+  <script>
+    // ====================================================================================================================
+    // ~~~ SECOND SCRIPT ~~~ 
+    // THIS WAITS FOR THE IFRAME AND THE VIDEO INSIDE OF THE IFRAME TO BE CREATED BEFORE INITIALIZING THE PAGE VISIBLE API
+    // ====================================================================================================================
+
+    // "Global" variables.
+    const THE_IFRAME_ID = 'my-iframe-id'; // may need to change this
+    const THE_VIDEO_ID = 'my-video-id'; // may need to change this
+
+    // The main 'entry point' that waits for all appropriate elements
+    // to be created before trying to initialize the Page Visible API.
+    waitForElement(document, THE_IFRAME_ID, () => {
+      waitForVideoElement(THE_IFRAME_ID, THE_VIDEO_ID, () => {
+        initPageVisibleApi(THE_IFRAME_ID, THE_VIDEO_ID);
+      });
+    })
+
+    function waitForVideoElement(iframeID, videoElementID, callback) {
+      // Wrapped the 'waitForelement' function with this function 
+      // to make thing cleaner.
+      let theIframeElement = document.getElementById(iframeID);
+      let iframeEl = theIframeElement.contentWindow.document;
+      waitForElement(iframeEl, videoElementID, () => {
+        callback()
+      });
+    }
+
+    function waitForElement(parentEl, idOfElementToWaitFor, callback) {
+      // This function waits for an element to be created, then runs the
+      // specified callback function.
+      // In order to make it easier to work with iframes, I added the 
+      // parentEl parameter, so you can supply the correct DOM node/element.
+      let theInterval = setInterval(() => {
+        console.log("still waiting for " + idOfElementToWaitFor);
+        let element = parentEl.getElementById(idOfElementToWaitFor);
+        if (element) {
+          console.log(idOfElementToWaitFor + " exists!");
+          clearInterval(theInterval);
+          callback();
+        }
+      }, 100);
+    }
+
+    function initPageVisibleApi(iframeId, videoId) {
+      // This is the same code that builds out the Page Visible API
+      // event listeners. 
+      // The only difference is I wrapped it in a function and added 
+      // parameters to make it flexible.
+
+      var iframe = document.getElementById(iframeId);
+      var innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
+      var videoElement = innerDoc.getElementById(videoId);
+
+      // Set the name of the hidden property and the change event for visibility
+      var hidden, visibilityChange;
+      if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+        hidden = "hidden";
+        visibilityChange = "visibilitychange";
+      } else if (typeof document.msHidden !== "undefined") {
+        hidden = "msHidden";
+        visibilityChange = "msvisibilitychange";
+      } else if (typeof document.webkitHidden !== "undefined") {
+        hidden = "webkitHidden";
+        visibilityChange = "webkitvisibilitychange";
+      }
+
+      // If the page is hidden, pause the video;
+      // if the page is shown, play the video
+      function handleVisibilityChange() {
+        if (document[hidden]) {
+          videoElement.pause();
+        } else {
+          videoElement.play();
+        }
+      }
+
+      // Warn if the browser doesn't support addEventListener or the Page Visibility API
+      if (typeof document.addEventListener === "undefined" || hidden === undefined) {
+        alert(
+          "This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API."
+        );
+      } else {
+        // Handle page visibility change   
+        document.addEventListener(visibilityChange, handleVisibilityChange, false);
+        // When the video pauses, set the title.
+        // This shows the paused
+        const defaultTitle = document.title;
+        videoElement.addEventListener("pause", function () {
+          document.title = 'Paused - ' + defaultTitle;
+        }, false);
+
+        // When the video plays, set the title.
+        videoElement.addEventListener("play", function () {
+          document.title = 'Playing - ' + defaultTitle;
+        }, false);
+      }
+    }
+    
+    // ====================================================================================================================
+    // ---------- END SECOND SCRIPT ------------
+    // ====================================================================================================================
+  </script>
+</body>
+
+</html>
