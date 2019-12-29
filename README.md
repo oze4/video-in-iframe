@@ -1,4 +1,8 @@
 # video-in-iframe
+ - [***Demo can be found here***](https://oze4.github.io/video-in-iframe/) 
+ - Play the video and click on a different browser tab, or minimize the window, and the video will pause.. 
+ - Then click back to the demo and the video will resume (similar to how Instagram does it).
+
 POC - auto play/pause video tag that lives in an iframe when the page is not visible.
 
 The issue we had was the iframe and video inside of it were not created upon document ready/load. Had to come up with a way to wait for certain elements to be created first before initializing the Page Visible API.
