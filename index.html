@@ -33,7 +33,7 @@
       // Programmatically create the video element, which is what HP5 appears to
       // be doing.
       let videoEl = document.createElement('video');
-      videoEl.id = "my-video-id";
+      videoEl.classList.add("my-video-class");
       videoEl.src =
         "https://player.vimeo.com/external/376040732.sd.mp4?s=a88abddb83ad31962643b6c4dd8270323d80874e&amp;profile_id=165";
       videoEl['webkit-playsinline'] = "";
@@ -61,52 +61,51 @@
     // ====================================================================================================================
 
     // "Global" variables.
-    const THE_IFRAME_ID = 'my-iframe-id'; // may need to change this
-    const THE_VIDEO_ID = 'my-video-id'; // may need to change this
+    const THE_IFRAME_SELECTOR = '#my-iframe-id'; // may need to change this
+    const THE_VIDEO_SELECTOR = '.my-video-class'; // may need to change this
 
     // The main 'entry point' that waits for all appropriate elements
     // to be created before trying to initialize the Page Visible API.
-    waitForElement(document, THE_IFRAME_ID, () => {
-      waitForVideoElement(THE_IFRAME_ID, THE_VIDEO_ID, () => {
-        initPageVisibleApi(THE_IFRAME_ID, THE_VIDEO_ID);
+    waitForElement(document, THE_IFRAME_SELECTOR, () => {
+      waitForVideoElement(THE_IFRAME_SELECTOR, THE_VIDEO_SELECTOR, () => {
+        initPageVisibleApi(THE_IFRAME_SELECTOR, THE_VIDEO_SELECTOR);
       });
     })
 
-    function waitForVideoElement(iframeID, videoElementID, callback) {
+    function waitForVideoElement(iframeSelector, videoElementSelector, callback) {
       // Wrapped the 'waitForelement' function with this function 
       // to make thing cleaner.
-      let theIframeElement = document.getElementById(iframeID);
+      let theIframeElement = document.querySelector(iframeSelector);
       let iframeEl = theIframeElement.contentWindow.document;
-      waitForElement(iframeEl, videoElementID, () => {
+      waitForElement(iframeEl, videoElementSelector, () => {
         callback()
       });
     }
 
-    function waitForElement(parentEl, idOfElementToWaitFor, callback) {
+    function waitForElement(parentEl, selectorOfElementToWaitFor, callback) {
       // This function waits for an element to be created, then runs the
       // specified callback function.
       // In order to make it easier to work with iframes, I added the 
       // parentEl parameter, so you can supply the correct DOM node/element.
       let theInterval = setInterval(() => {
-        console.log("still waiting for " + idOfElementToWaitFor);
-        let element = parentEl.getElementById(idOfElementToWaitFor);
+        console.log("still waiting for " + selectorOfElementToWaitFor);
+        let element = parentEl.querySelector(selectorOfElementToWaitFor);
         if (element) {
-          console.log(idOfElementToWaitFor + " exists!");
+          console.log(selectorOfElementToWaitFor + " exists!");
           clearInterval(theInterval);
           callback();
         }
       }, 100);
     }
 
-    function initPageVisibleApi(iframeId, videoId) {
+    function initPageVisibleApi(iframeSelector, videoSelector) {
       // This is the same code that builds out the Page Visible API
       // event listeners. 
       // The only difference is I wrapped it in a function and added 
       // parameters to make it flexible.
-
-      var iframe = document.getElementById(iframeId);
+      var iframe = document.querySelector(iframeSelector);
       var innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
-      var videoElement = innerDoc.getElementById(videoId);
+      var videoElement = innerDoc.querySelector(videoSelector);
 
       // Set the name of the hidden property and the change event for visibility
       var hidden, visibilityChange;
