@@ -103,9 +103,9 @@
       // event listeners. 
       // The only difference is I wrapped it in a function and added 
       // parameters to make it flexible.
-      var iframe = document.querySelector(iframeSelector);
-      var innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
-      var videoElement = innerDoc.querySelector(videoSelector);
+      const iframe = document.querySelector(iframeSelector);
+      const innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
+      const videoElement = innerDoc.querySelector(videoSelector);
 
       // Set the name of the hidden property and the change event for visibility
       var hidden, visibilityChange;
@@ -119,25 +119,29 @@
         hidden = "webkitHidden";
         visibilityChange = "webkitvisibilitychange";
       }
+      
+      // To tell if video has been played yet or not
+      let VIDEO_HAS_BEEN_PLAYED = false;
 
       // If the page is hidden, pause the video;
       // if the page is shown, play the video
       function handleVisibilityChange() {
-        if (document[hidden]) {
-          videoElement.pause();
-        } else {
-          videoElement.play();
+        if (VIDEO_HAS_BEEN_PLAYED) {
+          if (document[hidden]) {
+            videoElement.pause();
+          } else {
+            videoElement.play();
+          }
         }
       }
 
       // Warn if the browser doesn't support addEventListener or the Page Visibility API
       if (typeof document.addEventListener === "undefined" || hidden === undefined) {
-        alert(
-          "This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API."
-        );
+        alert("This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
       } else {
         // Handle page visibility change   
         document.addEventListener(visibilityChange, handleVisibilityChange, false);
+        
         // When the video pauses, set the title.
         // This shows the paused
         const defaultTitle = document.title;
@@ -147,6 +151,7 @@
 
         // When the video plays, set the title.
         videoElement.addEventListener("play", function () {
+          VIDEO_HAS_BEEN_PLAYED = true;
           document.title = 'Playing - ' + defaultTitle;
         }, false);
       }
