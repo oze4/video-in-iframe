@@ -8,6 +8,20 @@
 
 <body style="height: 100vh;">
   <h1>Testing Page Visibility API in an iframe</h1>
+  <h1><span><a href="https://github.com/oze4/video-in-iframe" target="_blank" rel="noopener noreferrer">Github</a></span></h1>
+
+  <!-- this is here only so we know when the DOM is 'ready' -->
+  <script> 
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("DOMContentLoaded");
+    });
+    document.addEventListener("readystatechange", () => {
+      if(document.readyState === "complete"){
+        console.log("readystatechange === 'complete'");
+      }
+    })
+  </script>
+  <!-- END this is here only so we know when the DOM is 'ready' -->
 
   <script>
     // ====================================================================================================================
