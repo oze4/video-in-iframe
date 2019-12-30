@@ -15,7 +15,6 @@
     // PROGRAMMATICALLY CREATES IFRAME WITH OUR VIDEO 
     // - this is what HP5 appears to be doing...
     // ====================================================================================================================
-
     // create placeholder text
     document.body.innerHTML += '<h3 id="placeholder">iframe will load in 5 seconds...</h3>'
 
@@ -25,30 +24,37 @@
       let pholder = document.getElementById('placeholder');
       pholder.remove();
 
-      // Programmatically create iframe, which is what HP5 appears to be doing..
-      let iframeEl = document.createElement('iframe');
-      iframeEl.setAttribute('id', 'my-iframe-id');
-      iframeEl.setAttribute('style', 'height: 100%; width: 100%;');
+      let IFRAME_IDS = ['my-iframe-1', 'my-iframe-2', 'my-iframe-3', 'my-iframe-4'];
+      let VIDEO_CLASS = "my-video-class"
 
-      // Programmatically create the video element, which is what HP5 appears to
-      // be doing.
-      let videoEl = document.createElement('video');
-      videoEl.classList.add("my-video-class");
-      videoEl.src =
-        "https://player.vimeo.com/external/376040732.sd.mp4?s=a88abddb83ad31962643b6c4dd8270323d80874e&amp;profile_id=165";
-      videoEl['webkit-playsinline'] = "";
-      videoEl['playsinline'] = "";
-      videoEl.preload = "metadata";
-      videoEl.setAttribute('controls', true);
+      IFRAME_IDS.forEach(iframeId => {
+        // Programmatically create iframe, which is what HP5 appears to be doing..
+        let iframeEl = document.createElement('iframe');
+        iframeEl.setAttribute('id', iframeId);
+        iframeEl.setAttribute('style', 'height: 500px; width: 800px;');
 
-      // Add programmatically created nodes to DOM.
-      document.body.appendChild(iframeEl);
-      iframeEl.contentWindow.document.open();
-      iframeEl.contentWindow.document.write('<h1>hello from iframe</h1>');
-      iframeEl.contentWindow.document.close();
-      iframeEl.contentDocument.body.appendChild(videoEl);
+        // Div for spacing
+        let divEl = document.createElement('div');
+
+        // Programmatically create the video element, which is what HP5 appears to
+        // be doing.
+        let videoEl = document.createElement('video');
+        videoEl.classList.add(VIDEO_CLASS);
+        videoEl.src = "https://player.vimeo.com/external/376040732.sd.mp4?s=a88abddb83ad31962643b6c4dd8270323d80874e&amp;profile_id=165";
+        videoEl['webkit-playsinline'] = "";
+        videoEl['playsinline'] = "";
+        videoEl.preload = "metadata";
+        videoEl.setAttribute('controls', true);
+
+        // Add programmatically created nodes to DOM.
+        document.body.appendChild(divEl);
+        divEl.appendChild(iframeEl);
+        iframeEl.contentWindow.document.open();
+        iframeEl.contentWindow.document.write('<h1>hello from iframe</h1>');
+        iframeEl.contentWindow.document.close();
+        iframeEl.contentDocument.body.appendChild(videoEl);
+      });
     }, 5000);
-
     // ====================================================================================================================
     // ---------- END FIRST SCRIPT ------------
     // ====================================================================================================================
@@ -59,22 +65,36 @@
     // ~~~ SECOND SCRIPT ~~~ 
     // THIS WAITS FOR THE IFRAME AND THE VIDEO INSIDE OF THE IFRAME TO BE CREATED BEFORE INITIALIZING THE PAGE VISIBLE API
     // ====================================================================================================================
-
     // "Global" variables.
-    const THE_IFRAME_SELECTOR = '#my-iframe-id'; // may need to change this
+    const THE_IFRAME_SELECTOR ='iframe[id^="my-iframe-"]'; // this will match all that start with my-iframe-
     const THE_VIDEO_SELECTOR = '.my-video-class'; // may need to change this
 
-    // The main 'entry point' that waits for all appropriate elements
-    // to be created before trying to initialize the Page Visible API.
-    waitForElement(document, THE_IFRAME_SELECTOR, () => {
-      waitForVideoElement(THE_IFRAME_SELECTOR, THE_VIDEO_SELECTOR, () => {
-        initPageVisibleApi(THE_IFRAME_SELECTOR, THE_VIDEO_SELECTOR);
+    waitForMultipleElements(document, THE_IFRAME_SELECTOR, () => {
+      let ALL_IFRAMES = document.querySelectorAll(THE_IFRAME_SELECTOR);
+      ALL_IFRAMES.forEach(FOUND_IFRAME => {
+        let FOUND_IFRAME_SELECTOR = `#${FOUND_IFRAME.id}`;
+        console.log("FOUND_IFRAME_SELECTOR:", FOUND_IFRAME_SELECTOR)
+        waitForElement(document, FOUND_IFRAME_SELECTOR, () => {
+          waitForVideoElement(FOUND_IFRAME_SELECTOR, THE_VIDEO_SELECTOR, () => {
+            initPageVisibleApi(FOUND_IFRAME_SELECTOR, THE_VIDEO_SELECTOR);
+          });
+        });
       });
-    })
+    });
+
+    function waitForMultipleElements(parentEl, selector, callback) {
+      let theInterval = setInterval(() => {
+        console.log('still waiting for all elements: ' + selector);
+        let elements = parentEl.querySelectorAll(selector);
+        if (elements.length) {
+          console.log("elements: " + selector + " exist!");
+          clearInterval(theInterval);
+          callback();
+        }
+      }, 1000);
+    }
 
     function waitForVideoElement(iframeSelector, videoElementSelector, callback) {
-      // Wrapped the 'waitForelement' function with this function 
-      // to make thing cleaner.
       let theIframeElement = document.querySelector(iframeSelector);
       let iframeEl = theIframeElement.contentWindow.document;
       waitForElement(iframeEl, videoElementSelector, () => {
@@ -83,10 +103,6 @@
     }
 
     function waitForElement(parentEl, selectorOfElementToWaitFor, callback) {
-      // This function waits for an element to be created, then runs the
-      // specified callback function.
-      // In order to make it easier to work with iframes, I added the 
-      // parentEl parameter, so you can supply the correct DOM node/element.
       let theInterval = setInterval(() => {
         console.log("still waiting for " + selectorOfElementToWaitFor);
         let element = parentEl.querySelector(selectorOfElementToWaitFor);
@@ -106,7 +122,6 @@
       const iframe = document.querySelector(iframeSelector);
       const innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
       const videoElement = innerDoc.querySelector(videoSelector);
-
       // Set the name of the hidden property and the change event for visibility
       var hidden, visibilityChange;
       if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
@@ -119,10 +134,9 @@
         hidden = "webkitHidden";
         visibilityChange = "webkitvisibilitychange";
       }
-      
+
       // To tell if video has been played yet or not
       let VIDEO_HAS_BEEN_PLAYED = false;
-
       // If the page is hidden, pause the video;
       // if the page is shown, play the video
       function handleVisibilityChange() {
@@ -134,21 +148,19 @@
           }
         }
       }
-
       // Warn if the browser doesn't support addEventListener or the Page Visibility API
       if (typeof document.addEventListener === "undefined" || hidden === undefined) {
         alert("This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
       } else {
         // Handle page visibility change   
         document.addEventListener(visibilityChange, handleVisibilityChange, false);
-        
+
         // When the video pauses, set the title.
         // This shows the paused
         const defaultTitle = document.title;
         videoElement.addEventListener("pause", function () {
           document.title = 'Paused - ' + defaultTitle;
         }, false);
-
         // When the video plays, set the title.
         videoElement.addEventListener("play", function () {
           VIDEO_HAS_BEEN_PLAYED = true;
@@ -161,5 +173,4 @@
     // ====================================================================================================================
   </script>
 </body>
-
 </html>
